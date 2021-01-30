@@ -387,7 +387,7 @@ bool sprawdzCzyPlikIstnieje( const char * plik ) {
     return true;
 }
 
-int odczytajZPliku(vector<Adresat> &adresaci, int idUzytkownika) {
+void odczytajZPliku(vector<Adresat> &adresaci, int idUzytkownika) {
 
     string id=zmianaIntnaString(idUzytkownika);
 
@@ -459,13 +459,46 @@ int odczytajZPliku(vector<Adresat> &adresaci, int idUzytkownika) {
         }
     }
     adresy.close();
+}
 
-    if(adresaci.size()>0) {
-        ostatnieId=adresaci[adresaci.size()-1].id;
-    } else {
-        ostatnieId=0;
+int znajdzPrzedostatnioLinie() {
+
+    fstream mojplik;
+    mojplik.open( "adresy.txt", ios::in );
+    string linia;
+    int numerLinii=0;
+    while( !mojplik.eof() ) {
+        getline(mojplik,linia);
+        numerLinii++;
     }
-    return ostatnieId;
+    mojplik.close();
+    return numerLinii-1;
+}
+
+int znajdzOstatnieId() {
+
+    fstream adresy;
+    adresy.open( "adresy.txt", ios::in );
+    string linia, ostatniaLinia;
+    string ostatnieId="";
+    int numerLinii=1;
+    int numerOstatniejLinii=znajdzPrzedostatnioLinie();
+
+    while(getline(adresy,linia)) {
+        if(numerLinii==numerOstatniejLinii) {
+            ostatniaLinia=linia;
+        }
+        numerLinii++;
+    }
+    adresy.close();
+
+    for(int i=0; i<ostatniaLinia.length(); i++) {
+        if(ostatniaLinia[i]=='|') {
+            ostatnieId.insert(0,ostatniaLinia,0,i);
+        }
+    }
+    int id=atoi(ostatnieId.c_str());
+    return id;
 }
 
 void wyswietlMenuGlowne() {
@@ -484,7 +517,8 @@ void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika) {
     int ostatnieId=0;
 
     if(sprawdzCzyPlikIstnieje("adresy.txt")==true) {
-        ostatnieId=odczytajZPliku(adresaci, idUzytkownika);
+        odczytajZPliku(adresaci, idUzytkownika);
+        ostatnieId=znajdzOstatnieId();
     }
 
     while(1) {
@@ -505,7 +539,7 @@ void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika) {
         } else if(wybor=='5') {
             if(adresaci.size()>0) {
                 usunKontakt(adresaci);
-                ostatnieId=adresaci[adresaci.size()-1].id;
+                ostatnieId=znajdzOstatnieId();
                 usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika);
             } else {
                 cout<<"Brak adresatow do usuniecia"<<endl;
