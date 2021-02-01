@@ -65,10 +65,10 @@ void zarejestruj(vector<Uzytkownik> &uzytkownicy) {
     Sleep(1000);
 }
 
-int odczytajZPlikuUzytkownicy(vector<Uzytkownik> &uzytkownicy) {
+void odczytajZPlikuUzytkownicy(vector<Uzytkownik> &uzytkownicy, const string plikZUzytkownikami) {
 
     fstream uzytkownicyPlik;
-    uzytkownicyPlik.open("uzytkownicy.txt", ios::in);
+    uzytkownicyPlik.open(plikZUzytkownikami.c_str(), ios::in);
 
     string linia;
     string daneUzytkownika[3];
@@ -101,12 +101,12 @@ int odczytajZPlikuUzytkownicy(vector<Uzytkownik> &uzytkownicy) {
     uzytkownicyPlik.close();
 }
 
-void dopisanieDoPlikuUzytkownicy(vector<Uzytkownik> &uzytkownicy) {
+void dopisanieDoPlikuUzytkownicy(vector<Uzytkownik> &uzytkownicy, const string plikZUzytkownikami) {
 
     int iloscUzytkownikow=uzytkownicy.size();
 
     fstream uzytkownicyPlik;
-    uzytkownicyPlik.open("uzytkownicy.txt", ios::out | ios::app);
+    uzytkownicyPlik.open(plikZUzytkownikami.c_str(), ios::out | ios::app);
     stringstream ss;
     ss << uzytkownicy[iloscUzytkownikow-1].id;
     string id = ss.str();
@@ -228,30 +228,6 @@ void wyswietlWszystkie(vector<Adresat> adresaci) {
     getchar();
 }
 
-void usunKontakt(vector<Adresat> &adresaci) {
-
-    int iloscAdresow=adresaci.size();
-    vector <Adresat>::iterator it;
-    int id;
-    char wybor='n';
-    cout<<"Podaj id kontaku do usuniecia"<<endl;
-    cin>>id;
-
-    for(int i=0; i<iloscAdresow; i++) {
-        if(adresaci[i].id==id) {
-            it=adresaci.begin()+i;
-            cout<<"Aby usunac nacisnij: t "<<endl;
-            cin>>wybor;
-
-            if(wybor=='t') {
-                adresaci.erase(it);
-                cout<<"Kontakt zostal usuniety"<<endl;
-                Sleep(1000);
-            }
-        }
-    }
-}
-
 void wyswietlMenuEdycji() {
 
     cout<<"Co do edycji?"<<endl;
@@ -263,50 +239,6 @@ void wyswietlMenuEdycji() {
     cout<<"6. Powrot do menu"<<endl;
 }
 
-void edytujKontakt(vector<Adresat> &adresaci) {
-
-    int iloscAdresow=adresaci.size();
-    string doZmiany;
-    int id;
-    char wybor;
-    cout<<"Podaj id kontaku do edycji"<<endl;
-    cin>>id;
-
-    for(int i=0; i<iloscAdresow; i++) {
-        if(adresaci[i].id==id) {
-            wyswietlMenuEdycji();
-            cin>>wybor;
-
-            if(wybor=='1') {
-                cin>>doZmiany;
-                adresaci[i].imie=doZmiany;
-                cout<<"Imie zostalo zaktualizowane"<<endl;
-                Sleep(1000);
-            } else if(wybor=='2') {
-                cin>>doZmiany;
-                adresaci[i].nazwisko=doZmiany;
-                cout<<"Nazwisko zostalo zaktualizowane"<<endl;
-                Sleep(1000);
-            } else if(wybor=='3') {
-                cin>>doZmiany;
-                adresaci[i].adres=doZmiany;
-                cout<<"Adres zostal zaktualizowany"<<endl;
-                Sleep(1000);
-            } else if(wybor=='4') {
-                cin>>doZmiany;
-                adresaci[i].telefon=doZmiany;
-                cout<<"Adres zostal zaktualizowany"<<endl;
-                Sleep(1000);
-            } else if(wybor=='5') {
-                cin>>doZmiany;
-                adresaci[i].mail=doZmiany;
-                cout<<"Mail zostal zaktualizowany"<<endl;
-                Sleep(1000);
-            }
-        }
-    }
-}
-
 string zmianaIntnaString(int liczba) {
 
     stringstream ss;
@@ -316,38 +248,43 @@ string zmianaIntnaString(int liczba) {
     return wyraz;
 }
 
-void usuniecieIEskportDoNowegoPliku(vector<Adresat> &adresaci, int idUzytkownika) {
+string znajdzNumerUzytkownika(string linia) {
+
+    string numerUzytkownika;
+    for(int i=0; i<linia.length(); i++) {
+        if(linia[i]=='|') {
+            linia.erase(0,i+1);
+
+            for(int k=0; k<linia.length(); k++) {
+                if(linia[k]=='|') {
+                    numerUzytkownika.insert(0,linia,0,k);
+                    linia.erase();
+                }
+            }
+        }
+    }
+
+    return numerUzytkownika;
+}
+
+void usuniecieIEskportDoNowegoPliku(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami, const string plikTymczasowy) {
 
     int iloscAdresow=adresaci.size();
-    remove("adresy_tymczasowe.txt");
+    remove(plikTymczasowy.c_str());
 
     string idUzyt=zmianaIntnaString(idUzytkownika);
 
     fstream odczyt;
     fstream zapis;
-    odczyt.open("adresy.txt", ios::in);
-    zapis.open("adresy_tymczasowe.txt", ios::out | ios::app);
+    odczyt.open(plikZAdresami.c_str(), ios::in);
+    zapis.open(plikTymczasowy.c_str(), ios::out | ios::app);
     string linia;
-    string numerUzytkownika="";
-    string pomocniczaLinia;
+    string numerUzytkownika;
     int m=0;
 
-
     while(getline(odczyt,linia)) {
-        numerUzytkownika="";
-        pomocniczaLinia=linia;
-        for(int i=0; i<pomocniczaLinia.length(); i++) {
-            if(pomocniczaLinia[i]=='|') {
-                pomocniczaLinia.erase(0,i+1);
+        numerUzytkownika=znajdzNumerUzytkownika(linia);
 
-                for(int k=0; k<pomocniczaLinia.length(); k++) {
-                    if(pomocniczaLinia[k]=='|') {
-                        numerUzytkownika.insert(0,pomocniczaLinia,0,k);
-                        pomocniczaLinia.erase();
-                    }
-                }
-            }
-        }
         if(idUzyt==numerUzytkownika && m<iloscAdresow) {
             string id=zmianaIntnaString(adresaci[m].id);
             zapis<<id+'|'<<numerUzytkownika+'|'<<adresaci[m].imie+'|'<<adresaci[m].nazwisko+'|'<<adresaci[m].adres+'|'<<adresaci[m].telefon+'|'<<adresaci[m].mail+'|'<<endl;
@@ -358,18 +295,18 @@ void usuniecieIEskportDoNowegoPliku(vector<Adresat> &adresaci, int idUzytkownika
     }
     odczyt.close();
     zapis.close();
-    remove("adresy.txt");
+    remove(plikZAdresami.c_str());
 
-    rename("adresy_tymczasowe.txt", "adresy.txt");
+    rename(plikTymczasowy.c_str(), plikZAdresami.c_str());
 
 }
 
-void dopisanieDoPliku(vector<Adresat> &adresaci, int idUzytkownika) {
+void dopisanieDoPliku(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami) {
 
     string id, numerUzytkownika;
     int iloscAdresow=adresaci.size();
     fstream adresy;
-    adresy.open("adresy.txt", ios::out | ios::app);
+    adresy.open(plikZAdresami.c_str(), ios::out | ios::app);
 
     id=zmianaIntnaString(adresaci[iloscAdresow-1].id);
     numerUzytkownika=zmianaIntnaString(idUzytkownika);
@@ -387,20 +324,42 @@ bool sprawdzCzyPlikIstnieje( const char * plik ) {
     return true;
 }
 
-void odczytajZPliku(vector<Adresat> &adresaci, int idUzytkownika) {
+void odczytajDanePojedynczegoKontaktu(string daneKontaktu[], string linia) {
+
+    int j=0;
+
+    for(int i=0; i<linia.length(); i++) {
+        if(linia[i]=='|' && j==0) {
+            daneKontaktu[j].insert(0,linia,0,i);
+            linia.erase(0,i+1);
+            i=0;
+            j++;
+            for(int k=0; k<linia.length(); k++) {
+                if(linia[k]=='|') {
+                    linia.erase(0,k+1);
+                    break;
+                }
+            }
+        } else if(linia[i]=='|') {
+            daneKontaktu[j].insert(0,linia,0,i);
+            linia.erase(0,i+1);
+            i=0;
+            j++;
+        }
+    }
+}
+
+void odczytajZPliku(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami) {
 
     string id=zmianaIntnaString(idUzytkownika);
 
     fstream adresy;
-    adresy.open("adresy.txt", ios::in);
+    adresy.open(plikZAdresami.c_str(), ios::in);
     int ostatnieId;
 
     string linia;
     string numerUzytkownika="";
     string daneKontaktu[6];
-    int nrlinii=1;
-    int j=0;
-
 
     Adresat adresatZPliku;
 
@@ -412,41 +371,10 @@ void odczytajZPliku(vector<Adresat> &adresaci, int idUzytkownika) {
         daneKontaktu[3]="";
         daneKontaktu[4]="";
         daneKontaktu[5]="";
-        j=0;
-        numerUzytkownika="";
-        string pomocniczaLinia=linia;
 
-        for(int i=0; i<pomocniczaLinia.length(); i++) {
-            if(pomocniczaLinia[i]=='|') {
-                pomocniczaLinia.erase(0,i+1);
+        numerUzytkownika=znajdzNumerUzytkownika(linia);
+        odczytajDanePojedynczegoKontaktu(daneKontaktu, linia);
 
-                for(int k=0; k<pomocniczaLinia.length(); k++) {
-                    if(pomocniczaLinia[k]=='|') {
-                        numerUzytkownika.insert(0,pomocniczaLinia,0,k);
-                        pomocniczaLinia.erase();
-                    }
-                }
-            }
-        }
-        for(int i=0; i<linia.length(); i++) {
-            if(linia[i]=='|' && j==0) {
-                daneKontaktu[j].insert(0,linia,0,i);
-                linia.erase(0,i+1);
-                i=0;
-                j++;
-                for(int k=0; k<linia.length(); k++) {
-                    if(linia[k]=='|') {
-                        linia.erase(0,i+2);
-                        break;
-                    }
-                }
-            } else if(linia[i]=='|') {
-                daneKontaktu[j].insert(0,linia,0,i);
-                linia.erase(0,i+1);
-                i=0;
-                j++;
-            }
-        }
         if(numerUzytkownika==id) {
             adresatZPliku.id=atoi(daneKontaktu[0].c_str());
             adresatZPliku.imie=daneKontaktu[1];
@@ -461,10 +389,10 @@ void odczytajZPliku(vector<Adresat> &adresaci, int idUzytkownika) {
     adresy.close();
 }
 
-int znajdzPrzedostatnioLinie() {
+int znajdzPrzedostatnioLinie(const string plikZAdresami) {
 
     fstream mojplik;
-    mojplik.open( "adresy.txt", ios::in );
+    mojplik.open( plikZAdresami.c_str(), ios::in );
     string linia;
     int numerLinii=0;
     while( !mojplik.eof() ) {
@@ -475,14 +403,14 @@ int znajdzPrzedostatnioLinie() {
     return numerLinii-1;
 }
 
-int znajdzOstatnieId() {
+int znajdzOstatnieId(const string plikZAdresami) {
 
     fstream adresy;
-    adresy.open( "adresy.txt", ios::in );
+    adresy.open( plikZAdresami.c_str(), ios::in );
     string linia, ostatniaLinia;
     string ostatnieId="";
     int numerLinii=1;
-    int numerOstatniejLinii=znajdzPrzedostatnioLinie();
+    int numerOstatniejLinii=znajdzPrzedostatnioLinie(plikZAdresami);
 
     while(getline(adresy,linia)) {
         if(numerLinii==numerOstatniejLinii) {
@@ -501,6 +429,82 @@ int znajdzOstatnieId() {
     return id;
 }
 
+void edytujKontakt(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami, const string plikTymczasowy) {
+
+    int iloscAdresow=adresaci.size();
+    string doZmiany;
+    int id;
+    char wybor;
+    cout<<"Podaj id kontaku do edycji"<<endl;
+    cin>>id;
+
+    for(int i=0; i<iloscAdresow; i++) {
+        if(adresaci[i].id==id) {
+            wyswietlMenuEdycji();
+            cin>>wybor;
+
+            if(wybor=='1') {
+                cin>>doZmiany;
+                adresaci[i].imie=doZmiany;
+                usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
+                cout<<"Imie zostalo zaktualizowane"<<endl;
+                Sleep(1000);
+            } else if(wybor=='2') {
+                cin>>doZmiany;
+                adresaci[i].nazwisko=doZmiany;
+                usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
+                cout<<"Nazwisko zostalo zaktualizowane"<<endl;
+                Sleep(1000);
+            } else if(wybor=='3') {
+                cin>>doZmiany;
+                adresaci[i].adres=doZmiany;
+                usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
+                cout<<"Adres zostal zaktualizowany"<<endl;
+                Sleep(1000);
+            } else if(wybor=='4') {
+                cin>>doZmiany;
+                adresaci[i].telefon=doZmiany;
+                usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
+                cout<<"Adres zostal zaktualizowany"<<endl;
+                Sleep(1000);
+            } else if(wybor=='5') {
+                cin>>doZmiany;
+                adresaci[i].mail=doZmiany;
+                usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
+                cout<<"Mail zostal zaktualizowany"<<endl;
+                Sleep(1000);
+            }
+        }
+    }
+}
+
+int usunKontakt(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami, const string plikTymczasowy) {
+
+    int iloscAdresow=adresaci.size();
+    vector <Adresat>::iterator it;
+    int id, ostatnieId;
+    char wybor='n';
+    cout<<"Podaj id kontaku do usuniecia"<<endl;
+    cin>>id;
+
+    for(int i=0; i<iloscAdresow; i++) {
+        if(adresaci[i].id==id) {
+            it=adresaci.begin()+i;
+            cout<<"Aby usunac nacisnij: t "<<endl;
+            cin>>wybor;
+
+            if(wybor=='t') {
+                adresaci.erase(it);
+                usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
+                ostatnieId=znajdzOstatnieId(plikZAdresami);
+                cout<<"Kontakt zostal usuniety"<<endl;
+                Sleep(1000);
+                return ostatnieId;
+            }
+        }
+    }
+}
+
 void wyswietlMenuGlowne() {
 
     system("cls");
@@ -512,13 +516,13 @@ void wyswietlMenuGlowne() {
     cout<<"6. Edytuj kontakt"<<endl;
     cout<<"9. Wyjdz do logowania"<<endl;
 }
-void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika) {
+void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami, const string plikTymczasowy) {
     char wybor;
     int ostatnieId=0;
 
-    if(sprawdzCzyPlikIstnieje("adresy.txt")==true) {
-        odczytajZPliku(adresaci, idUzytkownika);
-        ostatnieId=znajdzOstatnieId();
+    if(sprawdzCzyPlikIstnieje(plikZAdresami.c_str())==true) {
+        odczytajZPliku(adresaci, idUzytkownika, plikZAdresami);
+        ostatnieId=znajdzOstatnieId(plikZAdresami);
     }
 
     while(1) {
@@ -529,7 +533,7 @@ void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika) {
         if(wybor=='1') {
             zapiszKontakt(adresaci, ostatnieId);
             ostatnieId=adresaci[adresaci.size()-1].id;
-            dopisanieDoPliku(adresaci, idUzytkownika);
+            dopisanieDoPliku(adresaci, idUzytkownika, plikZAdresami);
         } else if(wybor=='2') {
             znajdzImie(adresaci);
         } else if(wybor=='3') {
@@ -538,16 +542,14 @@ void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika) {
             wyswietlWszystkie(adresaci);
         } else if(wybor=='5') {
             if(adresaci.size()>0) {
-                usunKontakt(adresaci);
-                ostatnieId=znajdzOstatnieId();
-                usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika);
+                ostatnieId=usunKontakt(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
             } else {
                 cout<<"Brak adresatow do usuniecia"<<endl;
                 Sleep(1000);
             }
         } else if(wybor=='6') {
-            edytujKontakt(adresaci);
-            usuniecieIEskportDoNowegoPliku(adresaci, idUzytkownika);
+            edytujKontakt(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
+
         } else if(wybor=='9') {
             break;
         } else {
@@ -562,11 +564,15 @@ int main() {
     vector<Adresat> adresaci;
     vector <Uzytkownik> uzytkownicy;
 
+    const string plikZAdresami="adresy.txt";
+    const string plikZUzytkownikami="uzytkownicy.txt";
+    const string plikTymczsowy="adresy_tymczasowe.txt";
+
     int idZalogowanegoUzytkownika;
     char wyborLogowanie;
 
-    if(sprawdzCzyPlikIstnieje("uzytkownicy.txt")==true) {
-        odczytajZPlikuUzytkownicy(uzytkownicy);
+    if(sprawdzCzyPlikIstnieje(plikZUzytkownikami.c_str())==true) {
+        odczytajZPlikuUzytkownicy(uzytkownicy, plikZUzytkownikami);
     }
 
     while(1) {
@@ -577,11 +583,11 @@ int main() {
 
         if(wyborLogowanie=='1') {
             zarejestruj(uzytkownicy);
-            dopisanieDoPlikuUzytkownicy(uzytkownicy);
+            dopisanieDoPlikuUzytkownicy(uzytkownicy, plikZUzytkownikami);
         } else if(wyborLogowanie=='2') {
             idZalogowanegoUzytkownika=logowanie(uzytkownicy);
             if(idZalogowanegoUzytkownika!=0) {
-                wejdzDoMenuGlownego(adresaci, idZalogowanegoUzytkownika);
+                wejdzDoMenuGlownego(adresaci, idZalogowanegoUzytkownika, plikZAdresami, plikTymczsowy);
             }
         } else if(wyborLogowanie=='9') {
             exit(0);
