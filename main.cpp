@@ -521,7 +521,7 @@ int zapiszKontakt(vector<Adresat> &adresaci, int id, int idUzytkownika, const st
     adresaci.push_back(nowyAdresat);
 
     dopisanieDoPliku(adresaci, idUzytkownika, plikZAdresami);
-    int ostatnieId=nowyAdresat.id;
+    int ostatnieId=adresaci[adresaci.size()-1].id;
 
     cout<<"Kontakt zapisany"<<endl;
     Sleep(1000);
