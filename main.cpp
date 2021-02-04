@@ -136,47 +136,6 @@ int logowanie(vector<Uzytkownik> &uzytkownicy) {
 }
 //-------------------------------------------------------------------------
 
-void zapiszKontakt(vector<Adresat> &adresaci, int id) {
-
-    Adresat nowyAdresat;
-    int iloscAdresow=adresaci.size();
-    string imie, nazwisko, adres, telefon, mail;
-    cout<<"Podaj imie"<<endl;
-    cin>>imie;
-
-    cout<<"Podaj nazwisko"<<endl;
-    cin>>nazwisko;
-
-    for(int i=0; i<iloscAdresow; i++) {
-        if((adresaci[i].imie==imie) && (adresaci[i].nazwisko==nazwisko) ) {
-            cout<<"Dany kontakt jest juz zapisany, nastapi przejscie do menu glownego"<<endl;
-            Sleep(1000);
-        }
-    }
-    nowyAdresat.imie=imie;
-    nowyAdresat.nazwisko=nazwisko;
-
-    cin.sync();
-    cout<<"Podaj adres danej osoby"<<endl;
-    getline(cin, adres);
-
-    cout<<"Podaj telefon"<<endl;
-    getline(cin, telefon);
-
-    cout<<"Podaj email"<<endl;
-    getline(cin, mail);
-
-    nowyAdresat.adres=adres;
-    nowyAdresat.telefon=telefon;
-    nowyAdresat.mail=mail;
-    nowyAdresat.id=id+1;
-
-    adresaci.push_back(nowyAdresat);
-
-    cout<<"Kontakt zapisany"<<endl;
-    Sleep(1000);
-}
-
 void wyswieltDanegoAdresata(Adresat adresat) {
 
     cout<<adresat.imie+" "<<adresat.nazwisko+" "<<adresat.adres+" "<<adresat.telefon+" "<<adresat.mail<<endl;
@@ -267,6 +226,19 @@ string znajdzNumerUzytkownika(string linia) {
     return numerUzytkownika;
 }
 
+string znajdzIdAdresata(string linia) {
+
+    string numerAdresata;
+    for(int i=0; i<linia.length(); i++) {
+        if(linia[i]=='|') {
+            numerAdresata.insert(0,linia,0,i);
+            linia.erase();
+        }
+    }
+
+    return numerAdresata;
+}
+
 void usuniecieIEskportDoNowegoPliku(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami, const string plikTymczasowy) {
 
     int iloscAdresow=adresaci.size();
@@ -279,15 +251,19 @@ void usuniecieIEskportDoNowegoPliku(vector<Adresat> &adresaci, int idUzytkownika
     odczyt.open(plikZAdresami.c_str(), ios::in);
     zapis.open(plikTymczasowy.c_str(), ios::out | ios::app);
     string linia;
-    string numerUzytkownika;
+    string numerUzytkownika, idAdresata;
     int m=0;
 
     while(getline(odczyt,linia)) {
         numerUzytkownika=znajdzNumerUzytkownika(linia);
+        idAdresata=znajdzIdAdresata(linia);
 
         if(idUzyt==numerUzytkownika && m<iloscAdresow) {
             string id=zmianaIntnaString(adresaci[m].id);
-            zapis<<id+'|'<<numerUzytkownika+'|'<<adresaci[m].imie+'|'<<adresaci[m].nazwisko+'|'<<adresaci[m].adres+'|'<<adresaci[m].telefon+'|'<<adresaci[m].mail+'|'<<endl;
+
+            if(idAdresata==id) {
+                zapis<<id+'|'<<numerUzytkownika+'|'<<adresaci[m].imie+'|'<<adresaci[m].nazwisko+'|'<<adresaci[m].adres+'|'<<adresaci[m].telefon+'|'<<adresaci[m].mail+'|'<<endl;
+            }
             m++;
         } else if(idUzyt!=numerUzytkownika) {
             zapis<<linia<<endl;
@@ -505,6 +481,54 @@ int usunKontakt(vector<Adresat> &adresaci, int idUzytkownika, const string plikZ
     }
 }
 
+int zapiszKontakt(vector<Adresat> &adresaci, int id, int idUzytkownika, const string plikZAdresami) {
+
+    Adresat nowyAdresat;
+    int iloscAdresow=adresaci.size();
+    string imie, nazwisko, adres, telefon, mail;
+    cout<<"Podaj imie"<<endl;
+    cin>>imie;
+
+    cout<<"Podaj nazwisko"<<endl;
+    cin>>nazwisko;
+
+    for(int i=0; i<iloscAdresow; i++) {
+        if((adresaci[i].imie==imie) && (adresaci[i].nazwisko==nazwisko) ) {
+            cout<<"Dany kontakt jest juz zapisany, nastapi przejscie do menu glownego"<<endl;
+            Sleep(1000);
+            return 0;
+        }
+    }
+
+    nowyAdresat.imie=imie;
+    nowyAdresat.nazwisko=nazwisko;
+
+    cin.sync();
+    cout<<"Podaj adres danej osoby"<<endl;
+    getline(cin, adres);
+
+    cout<<"Podaj telefon"<<endl;
+    getline(cin, telefon);
+
+    cout<<"Podaj email"<<endl;
+    getline(cin, mail);
+
+    nowyAdresat.adres=adres;
+    nowyAdresat.telefon=telefon;
+    nowyAdresat.mail=mail;
+    nowyAdresat.id=id+1;
+
+    adresaci.push_back(nowyAdresat);
+
+    dopisanieDoPliku(adresaci, idUzytkownika, plikZAdresami);
+    int ostatnieId=nowyAdresat.id;
+
+    cout<<"Kontakt zapisany"<<endl;
+    Sleep(1000);
+
+    return ostatnieId;
+}
+
 void wyswietlMenuGlowne() {
 
     system("cls");
@@ -531,9 +555,7 @@ void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika, const str
         cin>>wybor;
 
         if(wybor=='1') {
-            zapiszKontakt(adresaci, ostatnieId);
-            ostatnieId=adresaci[adresaci.size()-1].id;
-            dopisanieDoPliku(adresaci, idUzytkownika, plikZAdresami);
+            zapiszKontakt(adresaci, ostatnieId, idUzytkownika, plikZAdresami);
         } else if(wybor=='2') {
             znajdzImie(adresaci);
         } else if(wybor=='3') {
