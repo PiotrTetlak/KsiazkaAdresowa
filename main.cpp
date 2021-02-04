@@ -134,6 +134,47 @@ int logowanie(vector<Uzytkownik> &uzytkownicy) {
     Sleep(1000);
     return 0;
 }
+
+string zmianaIntnaString(int liczba) {
+
+    stringstream ss;
+    ss << liczba;
+    string wyraz = ss.str();
+
+    return wyraz;
+}
+
+void przepisanieUzytkownikowDoPliku(vector<Uzytkownik> &uzytkownicy, const string plikZUzytkownikami) {
+
+    remove(plikZUzytkownikami.c_str());
+    int iloscUzykownikow=uzytkownicy.size();
+    fstream uzytkownicyPlik;
+    uzytkownicyPlik.open(plikZUzytkownikami.c_str(), ios::out | ios::app);
+
+    for(int i=0; i<iloscUzykownikow; i++) {
+        string id=zmianaIntnaString(uzytkownicy[i].id);
+
+        uzytkownicyPlik<<id+'|'<<uzytkownicy[i].nazwa+'|'<<uzytkownicy[i].haslo+'|'<<endl;
+    }
+    uzytkownicyPlik.close();
+}
+
+void edytujHaslo(vector<Uzytkownik> &uzytkownicy, int idUzytkownika) {
+
+    int iloscUzykownikow=uzytkownicy.size();
+    string doZmiany;
+    cout<<"Podaj nowe haslo: "<<endl;
+    cin>>doZmiany;
+
+    for(int i=0; i<iloscUzykownikow; i++) {
+        if(uzytkownicy[i].id==idUzytkownika) {
+
+            uzytkownicy[i].haslo=doZmiany;
+        }
+    }
+}
+
+
 //-------------------------------------------------------------------------
 
 void wyswieltDanegoAdresata(Adresat adresat) {
@@ -198,15 +239,6 @@ void wyswietlMenuEdycji() {
     cout<<"6. Powrot do menu"<<endl;
 }
 
-string zmianaIntnaString(int liczba) {
-
-    stringstream ss;
-    ss << liczba;
-    string wyraz = ss.str();
-
-    return wyraz;
-}
-
 string znajdzNumerUzytkownika(string linia) {
 
     string numerUzytkownika;
@@ -250,24 +282,22 @@ void usuniecieIEskportDoNowegoPliku(vector<Adresat> &adresaci, int idUzytkownika
     fstream zapis;
     odczyt.open(plikZAdresami.c_str(), ios::in);
     zapis.open(plikTymczasowy.c_str(), ios::out | ios::app);
-    string linia;
+    string linia, id;
     string numerUzytkownika, idAdresata;
     int m=0;
 
     while(getline(odczyt,linia)) {
         numerUzytkownika=znajdzNumerUzytkownika(linia);
         idAdresata=znajdzIdAdresata(linia);
+        if(m<iloscAdresow){
+        id=zmianaIntnaString(adresaci[m].id);}
 
-        if(idUzyt==numerUzytkownika && m<iloscAdresow) {
-            string id=zmianaIntnaString(adresaci[m].id);
+        if(idUzyt==numerUzytkownika && idAdresata==id) {
 
-            if(idAdresata==id) {
-                zapis<<id+'|'<<numerUzytkownika+'|'<<adresaci[m].imie+'|'<<adresaci[m].nazwisko+'|'<<adresaci[m].adres+'|'<<adresaci[m].telefon+'|'<<adresaci[m].mail+'|'<<endl;
-            }
+            zapis<<id+'|'<<numerUzytkownika+'|'<<adresaci[m].imie+'|'<<adresaci[m].nazwisko+'|'<<adresaci[m].adres+'|'<<adresaci[m].telefon+'|'<<adresaci[m].mail+'|'<<endl;
             m++;
         } else if(idUzyt!=numerUzytkownika) {
-            zapis<<linia<<endl;
-        }
+            zapis<<linia<<endl;}
     }
     odczyt.close();
     zapis.close();
@@ -481,7 +511,7 @@ int usunKontakt(vector<Adresat> &adresaci, int idUzytkownika, const string plikZ
     }
 }
 
-int zapiszKontakt(vector<Adresat> &adresaci, int id, int idUzytkownika, const string plikZAdresami) {
+void zapiszKontakt(vector<Adresat> &adresaci, int id, int idUzytkownika, const string plikZAdresami) {
 
     Adresat nowyAdresat;
     int iloscAdresow=adresaci.size();
@@ -496,7 +526,7 @@ int zapiszKontakt(vector<Adresat> &adresaci, int id, int idUzytkownika, const st
         if((adresaci[i].imie==imie) && (adresaci[i].nazwisko==nazwisko) ) {
             cout<<"Dany kontakt jest juz zapisany, nastapi przejscie do menu glownego"<<endl;
             Sleep(1000);
-            return 0;
+            return;
         }
     }
 
@@ -521,12 +551,8 @@ int zapiszKontakt(vector<Adresat> &adresaci, int id, int idUzytkownika, const st
     adresaci.push_back(nowyAdresat);
 
     dopisanieDoPliku(adresaci, idUzytkownika, plikZAdresami);
-    int ostatnieId=adresaci[adresaci.size()-1].id;
-
     cout<<"Kontakt zapisany"<<endl;
     Sleep(1000);
-
-    return ostatnieId;
 }
 
 void wyswietlMenuGlowne() {
@@ -538,9 +564,10 @@ void wyswietlMenuGlowne() {
     cout<<"4. Pokaz wszystkie kontakty"<<endl;
     cout<<"5. Usun kontakt"<<endl;
     cout<<"6. Edytuj kontakt"<<endl;
+    cout<<"7. Zmien haslo"<<endl;
     cout<<"9. Wyjdz do logowania"<<endl;
 }
-void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika, const string plikZAdresami, const string plikTymczasowy) {
+void wejdzDoMenuGlownego(vector<Adresat> &adresaci, vector<Uzytkownik> &uzytkownicy, int idUzytkownika, const string plikZAdresami, const string plikTymczasowy, const string plikZUzytkownikami) {
     char wybor;
     int ostatnieId=0;
 
@@ -556,6 +583,7 @@ void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika, const str
 
         if(wybor=='1') {
             zapiszKontakt(adresaci, ostatnieId, idUzytkownika, plikZAdresami);
+            ostatnieId=znajdzOstatnieId(plikZAdresami);
         } else if(wybor=='2') {
             znajdzImie(adresaci);
         } else if(wybor=='3') {
@@ -571,12 +599,16 @@ void wejdzDoMenuGlownego(vector<Adresat> &adresaci, int idUzytkownika, const str
             }
         } else if(wybor=='6') {
             edytujKontakt(adresaci, idUzytkownika, plikZAdresami, plikTymczasowy);
-
+        } else if(wybor=='7') {
+            edytujHaslo(uzytkownicy, idUzytkownika);
+            przepisanieUzytkownikowDoPliku(uzytkownicy, plikZUzytkownikami);
+            cout<<"Haslo zostalo zmienione"<<endl;
+            Sleep(1000);
         } else if(wybor=='9') {
             break;
         } else {
             cout<<"Wybierz poprawny przycisk (od 1 do 5)"<< endl;
-            Sleep(2000);
+            Sleep(1000);
         }
     }
 }
@@ -609,7 +641,7 @@ int main() {
         } else if(wyborLogowanie=='2') {
             idZalogowanegoUzytkownika=logowanie(uzytkownicy);
             if(idZalogowanegoUzytkownika!=0) {
-                wejdzDoMenuGlownego(adresaci, idZalogowanegoUzytkownika, plikZAdresami, plikTymczsowy);
+                wejdzDoMenuGlownego(adresaci, uzytkownicy, idZalogowanegoUzytkownika, plikZAdresami, plikTymczsowy, plikZUzytkownikami);
             }
         } else if(wyborLogowanie=='9') {
             exit(0);
